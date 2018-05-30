@@ -1,16 +1,6 @@
 import uuid from 'uuid';
 import database from '../firebase/firebase';
 
-// component calls action generator
-// action generator returns object
-// component dispatches object
-// redux store changes
-
-// component calls action generator
-// action generator returns function
-// component dispatches function (?)
-// function runs (has the ability to dispatch other actions and whatever it wants)
-
 // ADD_EXPENSE
 export const addExpense = (expense) => ({
   type: 'ADD_EXPENSE',
@@ -20,21 +10,20 @@ export const addExpense = (expense) => ({
 export const startAddExpense = (expenseData = {}) => {
   return (dispatch, getState) => {
     const uid = getState().auth.uid;
-    const { 
+    const {
       description = '',
       note = '',
       amount = 0,
       createdAt = 0
-     } = expenseData;
+    } = expenseData;
+    const expense = { description, note, amount, createdAt };
 
-     const expense = { description, note, amount, createdAt };
-     return database.ref(`users/${uid}/expenses`).push(expense)
-      .then((ref) => {
-        dispatch(addExpense({
-          id: ref.key,
-          ...expense
-        }));
-      });
+    return database.ref(`users/${uid}/expenses`).push(expense).then((ref) => {
+      dispatch(addExpense({
+        id: ref.key,
+        ...expense
+      }));
+    });
   };
 };
 
@@ -47,8 +36,7 @@ export const removeExpense = ({ id } = {}) => ({
 export const startRemoveExpense = ({ id } = {}) => {
   return (dispatch, getState) => {
     const uid = getState().auth.uid;
-
-    return database.ref(`/users/${uid}/expenses/${id}`).remove().then(() => {
+    return database.ref(`users/${uid}/expenses/${id}`).remove().then(() => {
       dispatch(removeExpense({ id }));
     });
   };
@@ -64,8 +52,7 @@ export const editExpense = (id, updates) => ({
 export const startEditExpense = (id, updates) => {
   return (dispatch, getState) => {
     const uid = getState().auth.uid;
-
-    return database.ref(`/users/${uid}/expenses/${id}`).update(updates).then(() => {
+    return database.ref(`users/${uid}/expenses/${id}`).update(updates).then(() => {
       dispatch(editExpense(id, updates));
     });
   };
@@ -77,12 +64,10 @@ export const setExpenses = (expenses) => ({
   expenses
 });
 
-// export const startSetExpenses;
-export const startSetExpenses = (expenses) => {
+export const startSetExpenses = () => {
   return (dispatch, getState) => {
     const uid = getState().auth.uid;
-
-    return database.ref(`/users/${uid}/expenses`).once('value').then((snapshot) => {
+    return database.ref(`users/${uid}/expenses`).once('value').then((snapshot) => {
       const expenses = [];
 
       snapshot.forEach((childSnapshot) => {
@@ -91,7 +76,8 @@ export const startSetExpenses = (expenses) => {
           ...childSnapshot.val()
         });
       });
+
       dispatch(setExpenses(expenses));
     });
-  }
+  };
 };
